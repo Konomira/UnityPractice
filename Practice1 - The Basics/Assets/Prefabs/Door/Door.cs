@@ -83,9 +83,9 @@ public class Door : MonoBehaviour, IInteractable
     // means its a coroutine when found as the return type of the function.
     private IEnumerator Animation(Vector3 targetRotation)
     {
-        // We define openRotation as a Vector3 because it's easier to work with when defining rotations
+        // We define targetRotation as a Vector3 because it's easier to work with when defining rotations
         // Vector3 has (x,y,z) components.  Quaternion has (x,y,z,w).  You don't need to worry about the specifics, just know
-        // that unity stores its rotations in Quaternions.  These can be converted to Vector3 using openRotation.eulerAngles.
+        // that unity stores its rotations in Quaternions.  These can be converted to Vector3 using targetRotation.eulerAngles.
         // We do the opposite using Quaternion.Euler(Vector3);
         Quaternion targetRotationQuaternion = Quaternion.Euler(targetRotation);
 
