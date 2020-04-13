@@ -39,8 +39,6 @@ public class Door : MonoBehaviour, IInteractable
 
     // Doors start closed, this is used as a toggle.
     private bool open = false;
-    // We keep track of whether the door is already moving to avoid attempting to move in both directions at once.
-    private bool animationInProgress = false;
 
     // Functions are defined in the format
     // scope ReturnType FunctionName(OptionalParameterType optionalParameterName,...)
@@ -60,9 +58,6 @@ public class Door : MonoBehaviour, IInteractable
     // defines its behaviour.
     public void Interact()
     {
-        if (animationInProgress)
-            return;
-
         // Toggle open state.
         // ! is the symbol for NOT
         // !true == false
@@ -70,18 +65,24 @@ public class Door : MonoBehaviour, IInteractable
 
         // Curly braces aren't required if the content that is usually enclosed is only a single line.
         if (open)
+        {
+            StopCoroutine("Animation");
             // Coroutines are used to split a function over multiple frames.  Normally the script will attempt to run every
             // called function within a single frame.  For the sake of animations and timers we want to spread our logic
             // out over time.
-            StartCoroutine(Animation(openRotation));
+            StartCoroutine(Animation(pivot.rotation, openRotation));
+        }
         else
-            StartCoroutine(Animation(closedRotation));        
+        {
+            StopCoroutine("Animation");
+            StartCoroutine(Animation(pivot.rotation, closedRotation));
+        }
 
     }
 
     // Coroutines use IEnumerator to define its return type.  Specifics aren't required knowledge, just know that IEnumerator
     // means its a coroutine when found as the return type of the function.
-    private IEnumerator Animation(Vector3 targetRotation)
+    private IEnumerator Animation(Quaternion startingRotation, Vector3 targetRotation)
     {
         // We define targetRotation as a Vector3 because it's easier to work with when defining rotations
         // Vector3 has (x,y,z) components.  Quaternion has (x,y,z,w).  You don't need to worry about the specifics, just know
@@ -89,24 +90,23 @@ public class Door : MonoBehaviour, IInteractable
         // We do the opposite using Quaternion.Euler(Vector3);
         Quaternion targetRotationQuaternion = Quaternion.Euler(targetRotation);
 
-        animationInProgress = true;
-
         // While loops run until the condition is met,  this can cause Unity to freeze if it never meets an exit condition
         // Our exit condition checks the angle between the target rotation and 
-        while (Quaternion.Angle(pivot.rotation, targetRotationQuaternion) > 2.5f)
+        float startTime = Time.timeSinceLevelLoad;
+        while(Time.time - startTime <= animationSpeed)
         {
             // Linear interpolation. Quaternion.Lerp(a,b,t). Give it two values: a, and b.  It will grab an intermediate value
             // between a and b, based on the value t. When t = 0, the value is a. When t = 1, the value is b.
             // Time.deltaTime gives us the amount of time this frame has been active.  1.0/frame rate
-            pivot.rotation = Quaternion.Lerp(pivot.rotation, targetRotationQuaternion, Time.deltaTime * animationSpeed);
+            pivot.rotation = Quaternion.Lerp(startingRotation, targetRotationQuaternion, (Time.time - startTime) / animationSpeed);
 
             // Coroutines use the yield function, which tells the coroutine to wait until the next frame.
             // If you wanted to specify a time you could use
             // yield return new WaitForSeconds(float)
-            yield return null;
+            yield return new WaitForEndOfFrame();
         }
         // Exit condition has been met, we are no longer animating
-        animationInProgress = false;
+
         // Stop this coroutine running
         StopCoroutine("Animation");
     }
